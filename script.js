@@ -14,8 +14,6 @@ function updateLinkAndHighlight() {
     Prism.highlightElement(document.getElementById('codeMirror'));
 }
 
-
-
 function copyToClipboard(selector) {
     const element = document.querySelector(selector);
     if (!element) {
