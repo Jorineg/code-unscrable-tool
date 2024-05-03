@@ -3,7 +3,7 @@ function generateLink() {
     const encoded = btoa(code.split("\n").sort(() => Math.random() - 0.5).join("\n"));
     const curPage = window.location.toString();
     const startPage = curPage.substring(0, curPage.lastIndexOf('/') + 1);
-    const link = `${page}?code=${encoded}`;
+    const link = `${startPage}?code=${encoded}`;
     document.getElementById('generatedLink').value = link;
 }
 
