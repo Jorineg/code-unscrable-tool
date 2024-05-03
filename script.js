@@ -1,6 +1,7 @@
 function generateLink() {
     const code = document.getElementById('inputCode').value;
-    const encoded = btoa(code.split("\n").sort(() => Math.random() - 0.5).join("\n"));
+    let encoded = btoa(code.split("\n").sort(() => Math.random() - 0.5).join("\n"));
+    encoded = encoded.replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
     const curPage = window.location.toString();
     const startPage = curPage.substring(0, curPage.lastIndexOf('/') + 1);
     const link = `${startPage}?code=${encoded}`;
@@ -30,7 +31,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const urlParams = new URLSearchParams(queryString);
     const code = urlParams.get('code');
     if (code) {
-        const decoded = atob(code);
+        let decoded = atob(code);
+        decoded = decoded.replace(/-/g, '+').replace(/_/g, '/');
         const lines = decoded.split('\n');
         const codeLines = document.getElementById('codeLines');
 
