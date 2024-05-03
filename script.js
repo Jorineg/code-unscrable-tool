@@ -74,6 +74,7 @@ async function updateCodeDisplay() {
                 parser: 'babel',
                 plugins: prettierPlugins,
             });
+            formattedCode = formattedCode.substring(9);
         } catch (e) {
             formattedCode = code;
         }
