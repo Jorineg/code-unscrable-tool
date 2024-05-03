@@ -29,10 +29,10 @@ function copyToClipboard(selector) {
 document.addEventListener('DOMContentLoaded', function () {
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
-    const code = urlParams.get('code');
+    let code = urlParams.get('code');
     if (code) {
-        let decoded = atob(code);
-        decoded = decoded.replace(/-/g, '+').replace(/_/g, '/');
+        code = code.replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = atob(code);
         const lines = decoded.split('\n');
         const codeLines = document.getElementById('codeLines');
 
