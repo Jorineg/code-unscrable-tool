@@ -1,6 +1,14 @@
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 function generateLink() {
     const code = document.getElementById('inputCode').value;
-    let encoded = btoa(code.split("\n").sort(() => Math.random() - 0.5).join("\n"));
+    let encoded = btoa(shuffleArray(code.split("\n")).join("\n"));
     encoded = encoded.replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
     const curPage = window.location.toString();
     const startPage = curPage.substring(0, curPage.lastIndexOf('/') + 1);
