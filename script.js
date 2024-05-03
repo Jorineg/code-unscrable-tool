@@ -69,7 +69,14 @@ async function updateCodeDisplay() {
             plugins: prettierPlugins,
         });
     } catch (e) {
-        formattedCode = code;
+        try {
+            formattedCode = await prettier.format("function " + code, {
+                parser: 'babel',
+                plugins: prettierPlugins,
+            });
+        } catch (e) {
+            formattedCode = code;
+        }
     }
     codeBlock.textContent = formattedCode;
     Prism.highlightElement(codeBlock);
