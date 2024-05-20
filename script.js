@@ -40,7 +40,9 @@ document.addEventListener('DOMContentLoaded', function () {
     let code = urlParams.get('code');
     if (code) {
         code = code.replace(/-/g, '+').replace(/_/g, '/');
-        const decoded = atob(code);
+        let decoded = atob(code);
+        // escape html characters
+        decoded = decoded.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const lines = decoded.split('\n');
         const codeLines = document.getElementById('codeLines');
 
