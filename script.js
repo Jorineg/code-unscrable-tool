@@ -1,11 +1,16 @@
-// Global variables to store original order and check setting
-let originalOrder = [];
-let checkEnabled = false;
+// Global variables to store hash and checking state
 let solutionHash = '';
+let checkEnabled = false;
 
 // Simple hash function to create a verification code
-function createHash(str) {
-    return btoa(str).substring(0, 6);
+function createHash(lines) {
+    // Join lines and create hash
+    return btoa(lines.join('')).substring(0, 6);
+}
+
+// Strip whitespace from lines
+function stripLines(lines) {
+    return lines.map(line => line.trim());
 }
 
 function shuffleArray(array) {
@@ -20,14 +25,14 @@ function generateLink() {
     const code = document.getElementById('inputCode').value;
     const lines = code.split("\n");
     
-    // Store original order indices
-    originalOrder = Array.from({ length: lines.length }, (_, i) => i);
+    // Strip whitespace from lines before processing
+    const strippedLines = stripLines(lines);
     
-    // Create a hash of the original solution for verification
-    const solutionHash = createHash(lines.join(''));
+    // Create a hash of the CORRECT solution (before scrambling)
+    const solutionHash = createHash(strippedLines);
     
     // Shuffle the lines
-    const shuffledLines = shuffleArray([...lines]);
+    const shuffledLines = shuffleArray([...strippedLines]);
     
     // Encode the shuffled content
     let encoded = btoa(shuffledLines.join("\n"));
@@ -37,10 +42,15 @@ function generateLink() {
     const checkSetting = document.getElementById('checkCorrectness') ? 
                          document.getElementById('checkCorrectness').checked : false;
     
-    // Build the URL with parameters
+    // Build the URL with parameters - only include hash if checking is enabled
     const curPage = window.location.toString();
     const startPage = curPage.substring(0, curPage.lastIndexOf('/') + 1);
-    const link = `${startPage}?code=${encoded}&check=${checkSetting}&hash=${solutionHash}`;
+    let link = `${startPage}?code=${encoded}`;
+    
+    // Only add hash parameter if correctness checking is enabled
+    if (checkSetting) {
+        link += `&hash=${solutionHash}`;
+    }
     
     document.getElementById('generatedLink').value = link;
 }
@@ -63,21 +73,17 @@ function copyToClipboard(selector) {
         .catch(err => console.error('Oops, unable to copy', err));
 }
 
-// Compare current order with original order
+// Compare current order with correct solution
 function isCorrectOrder() {
-    if (!checkEnabled || originalOrder.length === 0) return null;
+    if (!checkEnabled || !solutionHash) return null;
     
+    // Get current lines and extract only the code content (not the grip icon)
     const currentItems = document.querySelectorAll('#codeLines .list-group-item');
-    if (currentItems.length !== originalOrder.length) return false;
+    const currentLines = Array.from(currentItems).map(item => item.getAttribute('data-content'));
     
-    // Check if lines are in correct order
-    for (let i = 0; i < currentItems.length; i++) {
-        const currentIndex = parseInt(currentItems[i].getAttribute('data-index'));
-        if (currentIndex !== originalOrder[i]) {
-            return false;
-        }
-    }
-    return true;
+    // Create hash of current arrangement and compare with stored hash
+    const currentHash = createHash(currentLines);
+    return currentHash === solutionHash;
 }
 
 // Update or create correctness indicator
@@ -96,14 +102,15 @@ function updateCorrectnessIndicator(isCorrect) {
     indicator.style.position = 'fixed';
     indicator.style.top = '20px';
     indicator.style.right = '20px';
-    indicator.style.padding = '10px';
+    indicator.style.padding = '15px'; // Increased padding for larger size
     indicator.style.borderRadius = '50%';
-    indicator.style.width = '50px';
-    indicator.style.height = '50px';
+    indicator.style.width = '70px'; // Increased width
+    indicator.style.height = '70px'; // Increased height
     indicator.style.display = 'flex';
     indicator.style.alignItems = 'center';
     indicator.style.justifyContent = 'center';
-    indicator.style.fontSize = '24px';
+    indicator.style.fontSize = '36px'; // Larger font size
+    indicator.style.zIndex = '1000'; // Ensure it's on top
     
     if (isCorrect === true) {
         indicator.style.backgroundColor = '#28a745'; // Green
@@ -121,9 +128,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const urlParams = new URLSearchParams(queryString);
     let code = urlParams.get('code');
     
-    // Get check parameter and hash
-    checkEnabled = urlParams.get('check') === 'true';
+    // Get hash parameter - if present, checking is enabled
     solutionHash = urlParams.get('hash') || '';
+    checkEnabled = solutionHash !== '';
     
     if (code) {
         code = code.replace(/-/g, '+').replace(/_/g, '/');
@@ -133,17 +140,20 @@ document.addEventListener('DOMContentLoaded', function () {
         const lines = decoded.split('\n');
         const codeLines = document.getElementById('codeLines');
         
-        // Populate original order based on data-index
-        originalOrder = Array.from({ length: lines.length }, (_, i) => i);
-        
         lines.forEach((line, index) => {
             const item = document.createElement('div');
             item.className = 'list-group-item draggable';
             // escape ` and $ characters
-            line = line.replace(/`/g, '\\`').replace(/\$/g, '\\$');
-            item.innerHTML = `<i class="fa-solid fa-grip-lines"></i> ${line.trim()}`;
-            console.log(line.trim());
+            const cleanLine = line.trim().replace(/`/g, '\\`').replace(/\$/g, '\\$');
+            
+            // Store the clean line content in a data attribute for correctness checking
+            item.setAttribute('data-content', cleanLine);
             item.setAttribute('data-index', index);
+            
+            // Set the HTML with the grip icon and the line
+            item.innerHTML = `<i class="fa-solid fa-grip-lines"></i> ${cleanLine}`;
+            console.log(cleanLine);
+            
             codeLines.appendChild(item);
         });
 
@@ -164,6 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <input class="form-check-input" type="checkbox" id="checkCorrectness">
             <label class="form-check-label" for="checkCorrectness">
                 Show correctness indicator
+                <p class="text-muted small mt-1">Adds a visual indicator showing if code is in correct order</p>
             </label>
         `;
         checkboxContainer.appendChild(checkbox);
@@ -178,8 +189,8 @@ async function updateCodeDisplay() {
     const lines = document.querySelectorAll('#codeLines .list-group-item');
     codeBlock.innerHTML = '';
 
-    // format with prettier
-    const code = Array.from(lines).map(line => line.textContent).join('\n');
+    // Extract clean code content from data-content attributes
+    const code = Array.from(lines).map(line => line.getAttribute('data-content')).join('\n');
 
     let formattedCode = '';
     try {
