@@ -2,10 +2,10 @@
 let solutionHash = '';
 let checkEnabled = false;
 
-// Simple hash function to create a verification code
+// Create hash of lines using CryptoJS SHA-256 and take first 6 characters
 function createHash(lines) {
     // Join lines and create hash
-    return btoa(lines.join('')).substring(0, 6);
+    return CryptoJS.SHA256(lines.join('')).toString().substring(0, 6);
 }
 
 // Strip whitespace from lines
@@ -111,13 +111,16 @@ function updateCorrectnessIndicator(isCorrect) {
     indicator.style.justifyContent = 'center';
     indicator.style.fontSize = '36px'; // Larger font size
     indicator.style.zIndex = '1000'; // Ensure it's on top
+    indicator.style.cursor = 'help'; // Show help cursor on hover
     
     if (isCorrect === true) {
         indicator.style.backgroundColor = '#28a745'; // Green
         indicator.innerHTML = '✓';
+        indicator.title = 'Well done, the code is in the correct order'; // Hover text for correct
     } else {
         indicator.style.backgroundColor = '#dc3545'; // Red
         indicator.innerHTML = '✗';
+        indicator.title = 'The code is not yet in the correct order'; // Hover text for incorrect
     }
     
     document.body.appendChild(indicator);
