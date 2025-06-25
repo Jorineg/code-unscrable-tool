@@ -138,8 +138,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (code) {
         code = code.replace(/-/g, '+').replace(/_/g, '/');
         let decoded = atob(code);
-        // escape html characters
-        decoded = decoded.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const lines = decoded.split('\n');
         const codeLines = document.getElementById('codeLines');
         
@@ -150,7 +148,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const cleanLine = line.trim().replace(/`/g, '\\`').replace(/\$/g, '\\$');
             
             // Store the clean line content in a data attribute for correctness checking
-            item.setAttribute('data-content', cleanLine);
+            // Ensure that we are storing the raw line content for data-content
+            item.setAttribute('data-content', line.trim());
             item.setAttribute('data-index', index);
             
             // Set the HTML with the grip icon and the line
